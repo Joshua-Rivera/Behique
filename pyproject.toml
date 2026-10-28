@@ -5,7 +5,11 @@ description = "Local-first RAG over your own folders: hybrid search, REST API, M
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastembed>=0.9.1",
+    "sqlite-vec>=0.1.9",
+    "tokenizers>=0.23.3",
+]
 
 [dependency-groups]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]

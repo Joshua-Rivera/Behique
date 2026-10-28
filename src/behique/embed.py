@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 from pathlib import Path
@@ -15,8 +16,13 @@ MAX_TOKENS = 512
 QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 
 
-@lru_cache(maxsize=4)
 def get_model(cache_dir: str | None = None) -> TextEmbedding:
+    # MODEL_CACHE lets the Docker image ship the model and run offline.
+    return _load(cache_dir or os.environ.get("MODEL_CACHE") or None)
+
+
+@lru_cache(maxsize=4)
+def _load(cache_dir: str | None) -> TextEmbedding:
     return TextEmbedding(MODEL_NAME, cache_dir=cache_dir)
 
 

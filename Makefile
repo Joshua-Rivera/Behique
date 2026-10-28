@@ -21,7 +21,7 @@ eval:
 	uv run python eval/run.py --check
 
 run:
-	uv run uvicorn behique.main:app --host 127.0.0.1 --port 8000
+	uv run uvicorn --factory behique.main:app --host 127.0.0.1 --port 8000
 
 docker:
 	docker compose up --build

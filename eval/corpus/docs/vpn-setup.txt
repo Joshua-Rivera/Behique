@@ -1,0 +1,3 @@
+Office VPN setup
+
+Install WireGuard, then import the profile you received from IT. The tunnel uses the endpoint vpn.example.internal on UDP port 51820. Split tunnelling is enabled, so only traffic for 10.20.0.0/16 goes through the VPN. If the handshake never completes, check that your home router does not block outbound UDP.

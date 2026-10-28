@@ -2,7 +2,6 @@ name: ci
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -26,3 +25,44 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
       - run: uv run pytest --cov=behique --cov-report=term-missing
+
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - run: uv run python eval/run.py --check
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build amd64 + arm64 (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Load amd64 image for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: behique:ci
+          cache-from: type=gha
+      - name: Smoke test /health (offline, read-only)
+        run: |
+          docker run -d --name smoke --network none --read-only --tmpfs /tmp behique:ci
+          for i in $(seq 30); do
+            if docker exec smoke python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=2)"; then
+              docker exec smoke python -c "import urllib.request as u; print(u.urlopen('http://127.0.0.1:8000/health').read().decode())"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs smoke
+          exit 1

@@ -13,3 +13,4 @@ dist/
 *.egg-info/
 data/
 .superpowers/
+eval/ask_results.json

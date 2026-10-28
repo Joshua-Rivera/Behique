@@ -85,9 +85,11 @@ body {
   text-shadow: none !important;
 }
 
-:focus-visible {
-  outline: 2px solid var(--clay);
-  outline-offset: 2px;
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+  }
 }
 
 .hairline {
@@ -121,4 +123,8 @@ mark {
     transform: none;
     opacity: 1;
   }
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
 }

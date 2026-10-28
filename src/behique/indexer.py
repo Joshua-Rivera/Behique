@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class Status:
     running: bool = False
+    source_id: int | None = None  # None: every source
     started_at: float | None = None
     finished_at: float | None = None
     files_seen: int = 0
@@ -73,7 +74,7 @@ class Indexer:
         return self.status
 
     def _run_locked(self, source_id: int | None) -> None:
-        self.status = Status(running=True, started_at=time.time())
+        self.status = Status(running=True, source_id=source_id, started_at=time.time())
         try:
             sources = self.store.list_sources()
             for src in sources:

@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { SearchMode } from "../settings";
 import { api, unwrap } from "./client";
-import type { FileView, Health, Hit, Source } from "./types";
+import type { FileView, Health, Hit, Mount, Source } from "./types";
 
 export function useHealth() {
   return useQuery({
@@ -73,5 +73,13 @@ export function useFullFile(fileId: number | null) {
       unwrap<FileView>(api.GET("/api/files/{file_id}", { params: { path: { file_id: fileId! } } })),
     enabled: fileId !== null,
     staleTime: 60_000,
+  });
+}
+
+export function useMounts(enabled = true) {
+  return useQuery({
+    queryKey: ["mounts"],
+    queryFn: () => unwrap<Mount[]>(api.GET("/api/mounts")),
+    enabled,
   });
 }

@@ -15,11 +15,12 @@ export type Source = {
   path: string;
   files: number;
   chunks: number;
-  last_indexed_at: string | null;
+  last_indexed_at: number | null;
 };
 
 export type IndexStatus = {
   running: boolean;
+  source_id: number | null;
   started_at: number | null;
   finished_at: number | null;
   files_seen: number;

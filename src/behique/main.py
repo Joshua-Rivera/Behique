@@ -75,7 +75,7 @@ class _McpSlash:
         await self.app(scope, receive, send)
 
 
-_INLINE_SCRIPT = re.compile(rb"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S)
+_INLINE_SCRIPT = re.compile(X
 
 
 def _script_hashes(web_dir: Path) -> list[str]:

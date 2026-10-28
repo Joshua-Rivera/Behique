@@ -1,0 +1,27 @@
+services:
+  behique:
+    build: .
+    image: ghcr.io/joshua-rivera/behique:latest
+    ports:
+      - "127.0.0.1:8000:8000"   # localhost only
+    volumes:
+      - index:/index
+      # Opt in: mount each folder you want indexed, read-only, under /data.
+      - ${NOTES_DIR:-./eval/corpus}:/data/notes:ro
+    environment:
+      API_KEY: ${API_KEY:-}
+      RESCAN_SECONDS: ${RESCAN_SECONDS:-300}
+      # /ask stays disabled (and the container offline) unless a key is set.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ASK_MODEL: ${ASK_MODEL:-claude-opus-5-5}
+      ALLOW_WEB: ${ALLOW_WEB:-false}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    restart: unless-stopped
+
+volumes:
+  index:

@@ -44,8 +44,8 @@ class FakeClient:
 def svc(tmp_path):
     c, svc, _ = _client(tmp_path)
     with c:
-        c.post("/sources", json={"path": "notes"})
-        c.post("/index")
+        c.post("/api/sources", json={"path": "notes"})
+        c.post("/api/index")
         _wait(svc)
         yield c, svc
 
@@ -150,7 +150,7 @@ def test_source_filter_applies_to_tools(svc):
 
 def test_api_503_without_key(svc):
     c, _ = svc
-    r = c.post("/ask", json={"question": "hi"})
+    r = c.post("/api/ask", json={"question": "hi"})
     assert r.status_code == 503
 
 
@@ -167,7 +167,7 @@ def test_api_maps_upstream_errors(svc):
         yield  # pragma: no cover
 
     s._asker = _asker(s, boom)
-    r = c.post("/ask", json={"question": "hi"})
+    r = c.post("/api/ask", json={"question": "hi"})
     assert r.status_code == 429 and r.headers["retry-after"] == "7"
 
     def down(tools):
@@ -175,4 +175,4 @@ def test_api_maps_upstream_errors(svc):
         yield  # pragma: no cover
 
     s._asker = _asker(s, down)
-    assert c.post("/ask", json={"question": "hi"}).status_code == 502
+    assert c.post("/api/ask", json={"question": "hi"}).status_code == 502

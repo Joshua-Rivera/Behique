@@ -56,7 +56,7 @@ def require_api_key(request: Request) -> None:
 
 Svc = Annotated[Service, Depends(get_service)]
 
-router = APIRouter(dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix="/api", dependencies=[Depends(require_api_key)])
 
 
 @router.get("/health")

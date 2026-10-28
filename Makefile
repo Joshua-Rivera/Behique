@@ -1,3 +1,6 @@
+# macOS can hide uv's editable .pth file, which Python then skips.
+export PYTHONPATH := src
+
 .PHONY: install lint format test eval run docker
 
 install:

@@ -1,0 +1,25 @@
+{"q": "how often should I feed my sourdough starter", "expected": "notes/sourdough.md"}
+{"q": "what temperature to bake bread in a dutch oven", "expected": "notes/sourdough.md"}
+{"q": "how do I know bulk fermentation is finished", "expected": "notes/sourdough.md"}
+{"q": "train time between Lisbon and Porto", "expected": "notes/portugal-trip.md"}
+{"q": "francesinha", "expected": "notes/portugal-trip.md"}
+{"q": "how much did the holiday in Portugal cost", "expected": "notes/portugal-trip.md"}
+{"q": "why are my monstera leaves turning yellow", "expected": "notes/houseplants.md"}
+{"q": "plant that survives low light and little watering", "expected": "notes/houseplants.md"}
+{"q": "who owns the queue migration and when is it due", "expected": "notes/meeting-2026-09-14.md"}
+{"q": "SKIP LOCKED", "expected": "notes/meeting-2026-09-14.md"}
+{"q": "nightly report job timing out", "expected": "notes/meeting-2026-09-14.md"}
+{"q": "TokenBucket", "expected": "code/ratelimit.py"}
+{"q": "limit how many requests per second a client can make", "expected": "code/ratelimit.py"}
+{"q": "retry_with_backoff", "expected": "code/retry.py"}
+{"q": "exponential backoff with jitter when a call fails", "expected": "code/retry.py"}
+{"q": "uniqueSlug", "expected": "code/slugify.ts"}
+{"q": "convert an article title into a url friendly string", "expected": "code/slugify.ts"}
+{"q": "ParseInvoiceCSV", "expected": "code/parse_invoice.go"}
+{"q": "sum the total cost of line items from a spreadsheet export", "expected": "code/parse_invoice.go"}
+{"q": "which UDP port does the VPN use", "expected": "docs/vpn-setup.txt"}
+{"q": "wireguard handshake never completes", "expected": "docs/vpn-setup.txt"}
+{"q": "daily meal allowance on business trips", "expected": "docs/expense-policy.txt"}
+{"q": "can I fly business class", "expected": "docs/expense-policy.txt"}
+{"q": "when do the Perseids peak", "expected": "docs/astronomy.md"}
+{"q": "good beginner telescope", "expected": "docs/astronomy.md"}

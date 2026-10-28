@@ -12,7 +12,10 @@ prompt; every tool is read-only; web tools are absent unless ``ALLOW_WEB=true``.
 
 from __future__ import annotations
 
+import queue
 import re
+import threading
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 
 import anthropic
@@ -47,6 +50,10 @@ class AskUnavailable(Exception):
     """No ANTHROPIC_API_KEY configured."""
 
 
+class _Cancelled(Exception):
+    """The consumer went away; stop the tool loop."""
+
+
 class AskUpstreamError(Exception):
     def __init__(self, message: str, status: int = 502, retry_after: str | None = None):
         super().__init__(message)
@@ -59,6 +66,7 @@ class _Run:
     """Per-request state the tools write into."""
 
     seen: dict[int, dict] = field(default_factory=dict)
+    emit: Callable[[str, dict], None] = lambda event, data: None
 
 
 def _tools(service: Service, run: _Run, source_id: int | None):
@@ -75,6 +83,7 @@ def _tools(service: Service, run: _Run, source_id: int | None):
             path_prefix: Only files under this relative path, e.g. "notes/".
         """
         k = max(1, min(int(k), 10))
+        run.emit("step", {"kind": "search", "label": f"Searching files: {query}"})
         hits = service.search(query, k=k, source_id=source_id, ext=ext, path_prefix=path_prefix)
         if not hits:
             return "No results."
@@ -111,6 +120,7 @@ def _tools(service: Service, run: _Run, source_id: int | None):
         """
         try:
             loc = service.chunk_location(int(chunk_id))
+            run.emit("step", {"kind": "read", "label": f"Reading {service.chunk_path(loc)}"})
             data = service.read_file(loc["file_id"], int(chunk_id), max(0, min(int(context), 2)))
         except NotFound as exc:
             return f"Error: {exc}"
@@ -190,8 +200,68 @@ class Asker:
     def ask(
         self, question: str, allow_web: bool | None = None, source_id: int | None = None
     ) -> dict:
+        """Run to completion. Consumes the same event stream as ``/ask/stream``."""
+        result: dict = {}
+        for event, data in self.events(question, allow_web, source_id):
+            if event == "error":
+                raise data["exception"]
+            if event == "result":
+                result = data
+        return result
+
+    def events(
+        self, question: str, allow_web: bool | None = None, source_id: int | None = None
+    ) -> Iterator[tuple[str, dict]]:
+        """Yield ``(event, data)`` as the agent works: step, delta, citations, usage, done.
+
+        The tool loop runs in a worker thread so steps arrive while tools run, not after the
+        next model call. Closing the generator (e.g. the client disconnects) stops the loop
+        at the next step. A failure is yielded as ``("error", {"exception": exc})``; the
+        final ``("result", {...})`` carries the same dict ``ask`` returns.
+        """
+        events: queue.Queue = queue.Queue()
+        cancel = threading.Event()
+        done = object()
+
+        def emit(event: str, data: dict) -> None:
+            if cancel.is_set():
+                raise _Cancelled()
+            events.put((event, data))
+
+        def work() -> None:
+            try:
+                result = self._run(question, allow_web, source_id, emit, cancel)
+                events.put(("delta", {"text": result["answer"]}))
+                events.put(("citations", {"citations": result["citations"]}))
+                events.put(("usage", result["usage"]))
+                meta = ("model", "web_enabled", "step_cap_reached", "refused")
+                events.put(("done", {k: result.get(k) for k in meta}))
+                events.put(("result", result))
+            except _Cancelled:
+                pass
+            except Exception as exc:  # surfaced to the consumer
+                events.put(("error", {"exception": exc}))
+            finally:
+                events.put(done)
+
+        worker = threading.Thread(target=work, daemon=True, name="behique-ask")
+        worker.start()
+        try:
+            while (item := events.get()) is not done:
+                yield item
+        finally:
+            cancel.set()
+
+    def _run(
+        self,
+        question: str,
+        allow_web: bool | None,
+        source_id: int | None,
+        emit: Callable[[str, dict], None],
+        cancel: threading.Event,
+    ) -> dict:
         web = self.settings.allow_web and allow_web is not False
-        run = _Run()
+        run = _Run(emit=emit)
         tools = _tools(self.service, run, source_id) + (_web_tools(self.settings) if web else [])
         usage = {
             "input": 0,
@@ -210,8 +280,18 @@ class Asker:
                 messages=[{"role": "user", "content": question}],
             )
             for message in runner:
+                if cancel.is_set():
+                    raise _Cancelled()
                 final = message
                 usage["steps"] += 1
+                for block in message.content:
+                    if getattr(block, "type", None) == "server_tool_use":
+                        query = (getattr(block, "input", None) or {}).get("query") or (
+                            getattr(block, "input", None) or {}
+                        ).get("url", "")
+                        kind = getattr(block, "name", "web_search")
+                        label = "Searching the web" if kind == "web_search" else "Fetching a page"
+                        emit("step", {"kind": kind, "label": f"{label}: {query}".rstrip(": ")})
                 u = message.usage
                 usage["input"] += u.input_tokens or 0
                 usage["output"] += u.output_tokens or 0

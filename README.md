@@ -158,6 +158,7 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 | `POST /api/search` `{query, k, mode, source_id?, ext?, path_prefix?}` | Ranked chunks |
 | `GET /api/files/{file_id}?chunk_id=&context=` | File text, or a chunk with neighbours |
 | `POST /api/ask` `{question, allow_web?, source_id?}` | Agentic answer with citations and usage |
+| `POST /api/ask/stream` | Same, as Server-Sent Events: `step`, `delta`, `citations`, `usage`, `done`, `error` |
 
 Interactive docs are at `http://localhost:8000/docs`.
 

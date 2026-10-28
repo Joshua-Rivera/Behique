@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import hmac
+import json
+import logging
+from collections.abc import Iterator
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from behique.agent import AskUnavailable, AskUpstreamError
 from behique.indexer import Busy
 from behique.service import BadRequest, NotFound, Service
+
+log = logging.getLogger(__name__)
 
 
 class SourceIn(BaseModel):
@@ -102,6 +107,34 @@ def read_file(svc: Svc, file_id: int, chunk_id: int | None = None, context: int 
 @router.post("/ask")
 def ask(body: AskIn, svc: Svc):
     return svc.ask(body.question, body.allow_web, body.source_id)
+
+
+def _sse(events: Iterator[tuple[str, dict]]) -> Iterator[str]:
+    try:
+        for event, data in events:
+            if event == "result":
+                continue
+            if event == "error":
+                exc = data["exception"]
+                if isinstance(exc, AskUpstreamError):
+                    data = {"status": exc.status, "detail": str(exc)}
+                else:
+                    log.exception("ask stream failed", exc_info=exc)
+                    data = {"status": 500, "detail": "internal error"}
+            yield f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    finally:
+        events.close()  # type: ignore[attr-defined]  # stops the agent on disconnect
+
+
+@router.post("/ask/stream")
+def ask_stream(body: AskIn, svc: Svc):
+    """Server-Sent Events: step, delta, citations, usage, done, error."""
+    events = svc.ask_events(body.question, body.allow_web, body.source_id)  # 503 before streaming
+    return StreamingResponse(
+        _sse(events),
+        media_type="text/event-stream",
+        headers={"cache-control": "no-cache", "x-accel-buffering": "no"},
+    )
 
 
 def install(app: FastAPI) -> None:

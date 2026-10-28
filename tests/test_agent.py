@@ -1,3 +1,6 @@
+import json
+import threading
+import time
 from types import SimpleNamespace as NS
 
 import anthropic
@@ -176,3 +179,80 @@ def test_api_maps_upstream_errors(svc):
 
     s._asker = _asker(s, down)
     assert c.post("/api/ask", json={"question": "hi"}).status_code == 502
+
+
+def _sse(text):
+    out = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.splitlines())
+        out.append((lines["event"], json.loads(lines["data"])))
+    return out
+
+
+def test_stream_emits_steps_answer_and_usage(svc):
+    c, s = svc
+
+    def script(tools):
+        out = tools["search_local"].call({"query": "unique_token_xyz"})
+        cid = int(out.split("[chunk:")[1].split("]")[0])
+        tools["read_chunk"].call({"chunk_id": cid})
+        yield _msg(
+            [NS(type="server_tool_use", name="web_search", input={"query": "news"})],
+            stop="tool_use",
+        )
+        yield _msg([_text(f"Found it [chunk:{cid}].")])
+
+    s._asker = _asker(s, script)
+    r = c.post("/api/ask/stream", json={"question": "where?"})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
+    events = _sse(r.text)
+    kinds = [e for e, _ in events]
+    assert kinds == ["step", "step", "step", "delta", "citations", "usage", "done"]
+    assert events[0][1] == {"kind": "search", "label": "Searching files: unique_token_xyz"}
+    assert events[1][1]["label"] == "Reading a.md"
+    assert events[2][1] == {"kind": "web_search", "label": "Searching the web: news"}
+    assert events[3][1]["text"].startswith("Found it")
+    assert events[4][1]["citations"][0]["path"] == "a.md"
+    assert events[5][1]["steps"] == 2 and events[6][1]["refused"] is False
+
+
+def test_stream_503_and_error_event(svc):
+    c, s = svc
+    assert c.post("/api/ask/stream", json={"question": "hi"}).status_code == 503
+    req = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    def down(tools):
+        raise anthropic.APIConnectionError(request=req)
+        yield  # pragma: no cover
+
+    s._asker = _asker(s, down)
+    events = _sse(c.post("/api/ask/stream", json={"question": "hi"}).text)
+    assert events == [("error", {"status": 502, "detail": "could not reach the Claude API"})]
+
+
+def test_closing_the_stream_stops_the_agent(svc):
+    _, s = svc
+    started, release = threading.Event(), threading.Event()
+    calls = []
+
+    def script(tools):
+        def slow():
+            tools["search_local"].call({"query": "a"})
+            started.set()
+            release.wait(5)
+            calls.append(tools["search_local"].call({"query": "b"}))  # cancelled here
+            yield _msg([_text("late")])
+
+        return slow()
+
+    a = _asker(s, script)
+    a.client.beta.messages.tool_runner = lambda **kw: script(
+        {t.name if hasattr(t, "name") else t["name"]: t for t in kw["tools"]}
+    )
+    gen = a.events("q")
+    assert next(gen)[0] == "step"
+    assert started.wait(5)
+    gen.close()
+    release.set()
+    time.sleep(0.2)
+    assert calls == []  # the second search raised instead of running

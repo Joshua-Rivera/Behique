@@ -28,6 +28,7 @@ class Service:
         self.store = store
         self.embedder = embedder
         self.indexer = Indexer(store, embedder, settings)
+        self._asker = None
 
     # -- health / sources -------------------------------------------------
 
@@ -135,6 +136,17 @@ class Service:
             out.append(text)
             end = max(end, c["end_char"])
         return "".join(out)
+
+    # -- ask ----------------------------------------------------------------
+
+    def ask(
+        self, question: str, allow_web: bool | None = None, source_id: int | None = None
+    ) -> dict:
+        from behique.agent import Asker
+
+        if self._asker is None:
+            self._asker = Asker(self, self.settings)  # raises AskUnavailable without a key
+        return self._asker.ask(question, allow_web, source_id)
 
     def chunk_location(self, chunk_id: int) -> dict:
         c = self.store.get_chunk(chunk_id)

@@ -1,10 +1,18 @@
-.PHONY: lint test eval run docker
+.PHONY: install lint format test eval run docker
+
+install:
+	uv sync
 
 lint:
-	uv run ruff check . && uv run ruff format --check .
+	uv run ruff check .
+	uv run ruff format --check .
+
+format:
+	uv run ruff format .
+	uv run ruff check --fix .
 
 test:
-	uv run pytest --cov=behique
+	uv run pytest --cov=behique --cov-report=term-missing
 
 eval:
 	uv run python eval/run.py

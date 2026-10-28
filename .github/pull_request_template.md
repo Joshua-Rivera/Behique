@@ -2,5 +2,9 @@
 
 ## How it was tested
 
+- [ ] `make lint`
+- [ ] `make test`
+
 ## Eval delta
-<!-- hit@5 / MRR before and after, or "n/a" -->
+
+<!-- hybrid hit@5 / MRR before → after, or "n/a" -->

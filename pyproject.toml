@@ -1,6 +1,6 @@
 [project]
 name = "behique"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local-first RAG over your own folders: hybrid search, REST API, MCP and agentic /ask."
 readme = "README.md"
 license = "MIT"

@@ -6,6 +6,8 @@ the folders you mount (read-only), and gives you:
 - **Hybrid search** (local embeddings + BM25, merged with reciprocal rank fusion) over a REST API
 - An **MCP endpoint**, so Claude and other agents can search your files
 - An opt-in **agentic `/ask`** that answers from your files first and uses the web only when allowed
+- A **web UI** at `http://localhost:8000` (Search, Ask, Sources, Settings, ⌘K), served from the
+  same container with no external requests
 
 Without an Anthropic API key, nothing leaves the container.
 
@@ -28,6 +30,34 @@ To index more folders, add more read-only mounts under `/data` in `docker-compos
 prebuilt image (amd64 and arm64) is published at `ghcr.io/joshua-rivera/behique`.
 
 Without Docker: `uv sync && DATA_ROOT=~/notes DB_PATH=./behique.db make run`.
+
+## Web UI
+
+Open **http://localhost:8000**. Add a mounted folder on **Sources**, then search or ask.
+
+![Search with the preview pane](docs/screenshots/search.png)
+
+- **Search**: Hybrid, Vector or Keyword, filters, a resizable preview with the matching chunk
+  highlighted, and "Copy citation" (`path:lines`). ↑/↓ move through results.
+- **Ask**: streams a step timeline, then a Markdown answer with citation chips: clay for your
+  files (opens the preview), sea green for web pages. Shows tokens, cache reads and steps.
+- **Sources**: lists mounted folders, adds them, and shows live indexing progress.
+- **Settings**: API key (session only unless you choose "Remember"), theme, default mode.
+- **⌘K / Ctrl+K** from any page jumps to a result or asks about the query.
+
+![Ask with citations](docs/screenshots/ask.png)
+
+Panes are resizable (drag, ←/→ on a focused divider, double-click to reset) and remember their
+size. Light and dark follow your system unless you choose one. Motion is off under
+reduced-motion settings.
+
+Front-end development: `make run` with `DEV_CORS=true`, then
+`cd web && NEXT_PUBLIC_API_BASE=http://localhost:8000 pnpm dev`. After API changes run
+`pnpm gen:api`. Tests: `pnpm test` (unit) and `pnpm e2e` (Playwright + axe, against a running
+server with a folder mounted).
+
+**Design.** The earthy palette and the concentric-circle and zigzag motifs are abstract shapes
+inspired by Taíno art. No figures or petroglyphs are reproduced.
 
 ## Use it from Claude (MCP)
 
@@ -121,6 +151,9 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 - Secrets and noise are never indexed: `.env*`, keys and certificates, `credentials*`,
   `*secret*`, hidden directories, `node_modules`, `.git`, lockfiles. Symlinks are never followed.
 - Files are read through `/api/files/{id}`, by id only, never by a path you supply.
+- The UI loads nothing from the internet (no fonts, CDNs or analytics) and is served with a
+  strict Content-Security-Policy. File and web content is shown as text or sanitized Markdown.
+  Your API key stays in the tab's session storage unless you tick "Remember on this device".
 - **What leaves your machine:** nothing, unless `ANTHROPIC_API_KEY` is set. With it, `/ask`
   sends your question and the snippets Claude retrieves to the Anthropic API. With
   `ALLOW_WEB=true`, Claude can also search the web.
@@ -143,6 +176,8 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 | `ASK_MAX_STEPS` | `6` | Hard cap on agent steps |
 | `ASK_TASK_BUDGET` | unset | Optional token budget (min 20,000) |
 | `ALLOW_WEB` | `false` | Allow web search and fetch in `/ask` |
+| `WEB_DIR` | `/app/web` | Built UI to serve at `/` (skipped if missing) |
+| `DEV_CORS` | `false` | Allow `http://localhost:3000` for `pnpm dev` |
 | `WEB_ALLOWED_DOMAINS` / `WEB_BLOCKED_DOMAINS` | unset | Comma-separated; use one |
 
 ## API

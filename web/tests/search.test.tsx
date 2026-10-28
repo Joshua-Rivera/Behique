@@ -19,7 +19,7 @@ const hit = (chunk_id: number, file_id: number, path: string): Hit => ({
 });
 
 test("query terms are unique, lowercased and longest first", () => {
-  expect(queryTerms("Retry retry_with_backoff a")).toEqual(["retry_with_backoff", "retry"]);
+  expect(queryTerms("How to retry retry_with_backoff a")).toEqual(["retry_with_backoff", "retry"]);
 });
 
 test("highlight wraps matches in mark and escapes regex characters", () => {
@@ -45,4 +45,9 @@ test("results group by file in rank order", () => {
     ["a", [1, 3]],
     ["b", [2]],
   ]);
+});
+
+test("highlight matches at word starts only", () => {
+  const { container } = render(<p>{highlight("shows feeding feed", ["how", "feed"])}</p>);
+  expect([...container.querySelectorAll("mark")].map((m) => m.textContent)).toEqual(["feed", "feed"]);
 });

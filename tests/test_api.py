@@ -29,11 +29,11 @@ def _client(tmp_path, api_key=None):
     return TestClient(create_app(svc, rescan=False)), svc, data
 
 
-def _wait(svc):
-    for _ in range(200):
-        if not svc.indexer.running:
-            return
-        time.sleep(0.01)
+def _wait(svc, timeout=30.0):
+    deadline = time.monotonic() + timeout
+    while svc.indexer.running:
+        assert time.monotonic() < deadline, "index run did not finish"
+        time.sleep(0.02)
 
 
 @pytest.fixture

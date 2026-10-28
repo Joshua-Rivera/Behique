@@ -38,6 +38,11 @@ class Settings:
     ask_model: str = field(default_factory=lambda: os.environ.get("ASK_MODEL", "claude-opus-5-5"))
     ask_effort: str = field(default_factory=lambda: os.environ.get("ASK_EFFORT", "low"))
     ask_max_steps: int = field(default_factory=lambda: int(os.environ.get("ASK_MAX_STEPS", "6")))
+    ask_task_budget: int | None = field(
+        default_factory=lambda: (
+            int(os.environ["ASK_TASK_BUDGET"]) if os.environ.get("ASK_TASK_BUDGET") else None
+        )
+    )
     allow_web: bool = field(default_factory=lambda: _bool("ALLOW_WEB"))
     web_allowed_domains: list[str] = field(default_factory=lambda: _list("WEB_ALLOWED_DOMAINS"))
     web_blocked_domains: list[str] = field(default_factory=lambda: _list("WEB_BLOCKED_DOMAINS"))

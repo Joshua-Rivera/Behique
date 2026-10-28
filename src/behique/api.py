@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from behique.agent import AskUnavailable, AskUpstreamError
 from behique.indexer import Busy
 from behique.service import BadRequest, NotFound, Service
 
@@ -29,6 +30,12 @@ class SearchIn(BaseModel):
     source_id: int | None = None
     ext: str | None = None
     path_prefix: str | None = None
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=1, max_length=4000)
+    allow_web: bool | None = None
+    source_id: int | None = None
 
 
 def get_service(request: Request) -> Service:
@@ -87,6 +94,11 @@ def read_file(svc: Svc, file_id: int, chunk_id: int | None = None, context: int 
     return svc.read_file(file_id, chunk_id, context)
 
 
+@router.post("/ask")
+def ask(body: AskIn, svc: Svc):
+    return svc.ask(body.question, body.allow_web, body.source_id)
+
+
 def install(app: FastAPI) -> None:
     app.include_router(router)
 
@@ -101,3 +113,14 @@ def install(app: FastAPI) -> None:
     @app.exception_handler(Busy)
     async def _busy(_, exc: Busy):
         return JSONResponse({"detail": "an index run is already in progress"}, status_code=409)
+
+    @app.exception_handler(AskUnavailable)
+    async def _no_key(_, exc: AskUnavailable):
+        return JSONResponse(
+            {"detail": "/ask is disabled: set ANTHROPIC_API_KEY to enable it"}, status_code=503
+        )
+
+    @app.exception_handler(AskUpstreamError)
+    async def _upstream(_, exc: AskUpstreamError):
+        headers = {"retry-after": exc.retry_after} if exc.retry_after else None
+        return JSONResponse({"detail": str(exc)}, status_code=exc.status, headers=headers)

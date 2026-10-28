@@ -10,3 +10,6 @@ dist/
 *.sqlite
 .env
 .DS_Store
+*.egg-info/
+data/
+.superpowers/

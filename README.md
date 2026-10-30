@@ -152,6 +152,7 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 | `GET /api/health` | `{ok, model, chunks}` |
 | `POST /api/sources` `{name, path}` | Register a mounted folder |
 | `GET /api/sources` | Sources with file and chunk counts |
+| `GET /api/mounts` | Folders under `DATA_ROOT` you can register |
 | `POST /api/index` `{source_id?}` | Start a background run (409 if one is running) |
 | `GET /api/index/status` | Progress counters and recent errors |
 | `POST /api/search` `{query, k, mode, source_id?, ext?, path_prefix?}` | Ranked chunks |

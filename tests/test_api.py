@@ -145,3 +145,16 @@ def test_dev_cors(tmp_path):
         assert r.headers["access-control-allow-origin"] == "http://localhost:3000"
         r = c.get("/api/health", headers={"origin": "http://evil.example"})
         assert "access-control-allow-origin" not in r.headers
+
+
+def test_mounts(client):
+    c, _, data = client
+    (data / "code").mkdir()
+    (data / ".hidden").mkdir()
+    (data / "file.txt").write_text("x")
+    assert [m["name"] for m in c.get("/api/mounts").json()] == ["code", "notes"]
+    c.post("/api/sources", json={"path": "notes"})
+    assert {m["name"]: m["registered"] for m in c.get("/api/mounts").json()} == {
+        "code": False,
+        "notes": True,
+    }

@@ -57,6 +57,18 @@ class Service:
         sid = self.store.add_source(name.strip() or target.name, str(target))
         return self._source_dict(next(s for s in self.store.list_sources() if s["id"] == sid))
 
+    def list_mounts(self) -> list[dict]:
+        """Folders directly under DATA_ROOT, i.e. what the container was given."""
+        root = self.settings.data_root.resolve()
+        if not root.is_dir():
+            return []
+        registered = {s["path"] for s in self.store.list_sources()}
+        return [
+            {"name": d.name, "path": str(d), "registered": str(d) in registered}
+            for d in sorted(root.iterdir(), key=lambda d: d.name.lower())
+            if d.is_dir() and not d.name.startswith(".")
+        ]
+
     def list_sources(self) -> list[dict]:
         return [self._source_dict(s) for s in self.store.list_sources()]
 

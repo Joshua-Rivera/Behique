@@ -74,6 +74,11 @@ def list_sources(svc: Svc):
     return svc.list_sources()
 
 
+@router.get("/mounts")
+def list_mounts(svc: Svc):
+    return svc.list_mounts()
+
+
 @router.post("/index", status_code=202)
 def start_index(svc: Svc, body: IndexIn | None = None):
     return svc.start_index(body.source_id if body else None)

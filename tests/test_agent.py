@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import threading
 import time
@@ -256,3 +257,39 @@ def test_closing_the_stream_stops_the_agent(svc):
     release.set()
     time.sleep(0.2)
     assert calls == []  # the second search raised instead of running
+
+
+def test_demo_mode_answers_from_search_without_a_key(svc, monkeypatch):
+    c, s = svc
+    monkeypatch.setattr("behique.agent.DEMO_PAUSE", 0)
+    s.settings = dataclasses.replace(s.settings, ask_demo=True)
+    h = c.get("/api/health").json()
+    assert h["ask_enabled"] is True and h["ask_demo"] is True
+
+    r = c.post("/api/ask", json={"question": "unique_token_xyz", "allow_web": True})
+    body = r.json()
+    assert r.status_code == 200 and body["answer"].startswith("**Demo mode:**")
+    assert body["citations"][0]["path"] == "a.md"
+    assert f"[chunk:{body['citations'][0]['chunk_id']}]" in body["answer"]
+    assert body["model"] == "demo" and body["web_enabled"] is False
+    assert set(body["usage"].values()) == {0}
+
+    events = _sse(c.post("/api/ask/stream", json={"question": "unique_token_xyz"}).text)
+    assert [e for e, _ in events] == ["step", "step", "delta", "citations", "usage", "done"]
+    assert events[1][1] == {"kind": "read", "label": "Reading a.md"}
+
+
+def test_demo_mode_with_no_matches(svc, monkeypatch):
+    c, s = svc
+    monkeypatch.setattr("behique.agent.DEMO_PAUSE", 0)
+    s.settings = dataclasses.replace(s.settings, ask_demo=True)
+    monkeypatch.setattr(s, "search", lambda *a, **kw: [])
+    body = c.post("/api/ask", json={"question": "anything"}).json()
+    assert body["citations"] == [] and "Nothing in your indexed files" in body["answer"]
+
+
+def test_real_key_takes_precedence_over_demo(svc):
+    c, s = svc
+    s.settings = dataclasses.replace(s.settings, ask_demo=True, anthropic_api_key="test")
+    assert c.get("/api/health").json()["ask_demo"] is False
+    assert type(s._get_asker()) is Asker

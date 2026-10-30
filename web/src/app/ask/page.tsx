@@ -97,6 +97,10 @@ function Setup() {
         When you ask a question, the question and the matching snippets of your files are sent to
         Anthropic.
       </p>
+      <p className="mt-3">
+        No key? <code>ASK_DEMO=true</code> turns on a demo that shows the matching passages instead
+        of calling a model.
+      </p>
     </div>
   );
 }
@@ -159,6 +163,13 @@ export default function AskPage() {
 
       <div className="min-h-0 flex-1 overflow-auto" aria-live="polite">
         <div className="mx-auto max-w-3xl px-6 py-6">
+          {health.data?.ask_demo && (
+            <p role="note" className="mb-6 border-l-2 border-ochre bg-ochre-soft px-3 py-2 text-xs text-ink">
+              <span className="font-medium">Demo mode.</span> Answers list the best-matching passages
+              from your files; no model is called and nothing leaves your machine. Set{" "}
+              <code>ANTHROPIC_API_KEY</code> to have Claude answer.
+            </p>
+          )}
           {turns.length === 0 && (
             <p className="py-10 text-center text-sm text-stone">
               Ask a question about your files. Behique searches them first and only uses the web

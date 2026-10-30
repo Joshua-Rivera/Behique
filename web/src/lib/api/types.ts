@@ -6,6 +6,8 @@ export type Health = {
   model: string;
   chunks: number;
   ask_enabled: boolean;
+  /** Ask runs a scripted demo (ASK_DEMO=true, no key): real search, no model call. */
+  ask_demo?: boolean;
   web_allowed: boolean;
 };
 

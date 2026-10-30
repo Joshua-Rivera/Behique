@@ -68,7 +68,10 @@ export default function SettingsPage() {
         ["Version", h.version],
         ["Embedding model", h.model],
         ["Indexed chunks", h.chunks.toLocaleString()],
-        ["Ask", h.ask_enabled ? "Enabled" : "Off (no ANTHROPIC_API_KEY)"],
+        [
+          "Ask",
+          h.ask_demo ? "Demo mode (no ANTHROPIC_API_KEY)" : h.ask_enabled ? "Enabled" : "Off (no ANTHROPIC_API_KEY)",
+        ],
         ["Web access", h.web_allowed ? "Allowed" : "Off (ALLOW_WEB=false)"],
       ]
     : [];

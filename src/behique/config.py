@@ -43,6 +43,7 @@ class Settings:
             int(os.environ["ASK_TASK_BUDGET"]) if os.environ.get("ASK_TASK_BUDGET") else None
         )
     )
+    ask_demo: bool = field(default_factory=lambda: _bool("ASK_DEMO"))
     allow_web: bool = field(default_factory=lambda: _bool("ALLOW_WEB"))
     web_allowed_domains: list[str] = field(default_factory=lambda: _list("WEB_ALLOWED_DOMAINS"))
     web_blocked_domains: list[str] = field(default_factory=lambda: _list("WEB_BLOCKED_DOMAINS"))

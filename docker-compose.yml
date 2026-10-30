@@ -15,6 +15,8 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ASK_MODEL: ${ASK_MODEL:-claude-opus-5-5}
       ALLOW_WEB: ${ALLOW_WEB:-false}
+      # Without a key, ASK_DEMO=true shows Ask with real search and a scripted answer.
+      ASK_DEMO: ${ASK_DEMO:-false}
     read_only: true
     tmpfs:
       - /tmp

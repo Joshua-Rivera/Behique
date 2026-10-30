@@ -40,7 +40,8 @@ class Service:
             "version": __version__,
             "model": self.embedder.name,
             "chunks": self.store.chunk_count(),
-            "ask_enabled": bool(self.settings.anthropic_api_key),
+            "ask_enabled": bool(self.settings.anthropic_api_key) or self.settings.ask_demo,
+            "ask_demo": self._demo,
             "web_allowed": self.settings.allow_web,
         }
 
@@ -170,11 +171,19 @@ class Service:
     ):
         return self._get_asker().events(question, allow_web, source_id)
 
+    @property
+    def _demo(self) -> bool:
+        """Demo mode only applies when there is no real key."""
+        return self.settings.ask_demo and not self.settings.anthropic_api_key
+
     def _get_asker(self):
-        from behique.agent import Asker
+        from behique.agent import Asker, DemoAsker
 
         if self._asker is None:
-            self._asker = Asker(self, self.settings)  # raises AskUnavailable without a key
+            if self._demo:
+                self._asker = DemoAsker(self, self.settings)
+            else:
+                self._asker = Asker(self, self.settings)  # raises AskUnavailable without a key
         return self._asker
 
     def chunk_path(self, loc: dict) -> str:

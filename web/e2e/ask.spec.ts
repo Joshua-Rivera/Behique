@@ -59,6 +59,18 @@ test("streams steps, answer, citations and usage (mocked, no paid calls)", async
   await expectNoSeriousA11yIssues(page);
 });
 
+test("demo mode labels itself on the Ask page and in Settings", async ({ page }) => {
+  await page.route("**/api/health", async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, json: { ...(await res.json()), ask_enabled: true, ask_demo: true } });
+  });
+  await page.goto("/ask/");
+  await expect(page.getByRole("note")).toContainText("no model is called");
+  await expectNoSeriousA11yIssues(page);
+  await page.goto("/settings/");
+  await expect(page.getByText("Demo mode (no ANTHROPIC_API_KEY)")).toBeVisible();
+});
+
 test("Stop aborts a running answer", async ({ page }) => {
   await page.route("**/api/health", async (route) => {
     const res = await route.fetch();

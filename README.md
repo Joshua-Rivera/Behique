@@ -83,6 +83,10 @@ Claude searches locally first, reads full chunks only when a snippet isn't enoug
 when it can answer. Web search and fetch are available only with `ALLOW_WEB=true`. A request
 can pass `"allow_web": false` to turn them off, but cannot turn them on.
 
+No key? Set `ASK_DEMO=true` to try the Ask page anyway. Demo mode runs the real local search and
+streams the same steps and citations, but the answer is just the best-matching passages: no model
+is called and nothing leaves your machine. A real `ANTHROPIC_API_KEY` always takes precedence.
+
 ## Architecture
 
 ```mermaid
@@ -176,6 +180,7 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 | `ASK_MAX_STEPS` | `6` | Hard cap on agent steps |
 | `ASK_TASK_BUDGET` | unset | Optional token budget (min 20,000) |
 | `ALLOW_WEB` | `false` | Allow web search and fetch in `/ask` |
+| `ASK_DEMO` | `false` | Without a key, show `/ask` with real search and a scripted answer |
 | `WEB_DIR` | `/app/web` | Built UI to serve at `/` (skipped if missing) |
 | `DEV_CORS` | `false` | Allow `http://localhost:3000` for `pnpm dev` |
 | `WEB_ALLOWED_DOMAINS` / `WEB_BLOCKED_DOMAINS` | unset | Comma-separated; use one |

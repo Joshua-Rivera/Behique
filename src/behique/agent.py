@@ -69,6 +69,18 @@ class _Run:
     emit: Callable[[str, dict], None] = lambda event, data: None
 
 
+_CITATION_KEYS = ("file_id", "path", "heading_path", "symbol", "start_char", "end_char")
+
+
+def _local_citation(chunk_id: int, data: dict) -> dict:
+    return {"type": "local", "chunk_id": chunk_id, **{k: data[k] for k in _CITATION_KEYS}}
+
+
+def _empty_usage() -> dict:
+    keys = ("input", "output", "cache_read", "cache_write", "web_searches", "web_fetches", "steps")
+    return dict.fromkeys(keys, 0)
+
+
 def _tools(service: Service, run: _Run, source_id: int | None):
     @beta_tool
     def search_local(
@@ -89,16 +101,7 @@ def _tools(service: Service, run: _Run, source_id: int | None):
             return "No results."
         lines = []
         for h in hits:
-            run.seen[h["chunk_id"]] = {
-                "type": "local",
-                "chunk_id": h["chunk_id"],
-                "file_id": h["file_id"],
-                "path": h["path"],
-                "heading_path": h["heading_path"],
-                "symbol": h["symbol"],
-                "start_char": h["start_char"],
-                "end_char": h["end_char"],
-            }
+            run.seen[h["chunk_id"]] = _local_citation(h["chunk_id"], h)
             where = h["heading_path"] or h["symbol"] or ""
             text = " ".join(h["text"].split())
             if len(text) > SNIPPET_CHARS:
@@ -126,19 +129,7 @@ def _tools(service: Service, run: _Run, source_id: int | None):
             return f"Error: {exc}"
         if source_id is not None and data["source_id"] != source_id:
             return "Error: chunk is outside the selected source"
-        run.seen.setdefault(
-            int(chunk_id),
-            {
-                "type": "local",
-                "chunk_id": int(chunk_id),
-                "file_id": data["file_id"],
-                "path": data["path"],
-                "heading_path": data["heading_path"],
-                "symbol": data["symbol"],
-                "start_char": data["start_char"],
-                "end_char": data["end_char"],
-            },
-        )
+        run.seen.setdefault(int(chunk_id), _local_citation(int(chunk_id), data))
         return f"[chunk:{chunk_id}] {data['path']}\n{data['text']}"
 
     return [search_local, read_chunk]
@@ -263,15 +254,7 @@ class Asker:
         web = self.settings.allow_web and allow_web is not False
         run = _Run(emit=emit)
         tools = _tools(self.service, run, source_id) + (_web_tools(self.settings) if web else [])
-        usage = {
-            "input": 0,
-            "output": 0,
-            "cache_read": 0,
-            "cache_write": 0,
-            "web_searches": 0,
-            "web_fetches": 0,
-            "steps": 0,
-        }
+        usage = _empty_usage()
         final = None
         try:
             runner = self.client.beta.messages.tool_runner(
@@ -347,3 +330,61 @@ class Asker:
             result["answer"] = answer or "The model declined to answer this question."
             result["refusal_category"] = getattr(details, "category", None)
         return result
+
+
+DEMO_HITS = 3
+DEMO_PAUSE = 0.35  # seconds between steps, so the timeline is visible
+
+
+class DemoAsker(Asker):
+    """``ASK_DEMO=true`` without a key: real local search, scripted answer, no model call.
+
+    Emits the same events as ``Asker`` so the Ask UI can be shown off without an API key.
+    Nothing leaves the machine, and the answer says plainly that no model wrote it.
+    """
+
+    def __init__(self, service: Service, settings: Settings) -> None:
+        self.service = service
+        self.settings = settings
+
+    def _run(self, question, allow_web, source_id, emit, cancel) -> dict:
+        def pause() -> None:
+            if cancel.wait(DEMO_PAUSE):
+                raise _Cancelled()
+
+        emit("step", {"kind": "search", "label": f"Searching files: {question}"})
+        hits = self.service.search(question, k=DEMO_HITS, source_id=source_id)
+        pause()
+        if hits:
+            emit("step", {"kind": "read", "label": f"Reading {hits[0]['path']}"})
+            pause()
+
+        intro = (
+            "**Demo mode:** no model was called, so this is not a written answer. "
+            "Set `ANTHROPIC_API_KEY` to have Claude answer."
+        )
+        items = []
+        for h in hits:
+            where = h["heading_path"] or h["symbol"]
+            lines = h["text"].splitlines()
+            if h["heading_path"]:  # the label already shows the Markdown headings
+                lines = [ln for ln in lines if not ln.lstrip().startswith("#")]
+            text = " ".join(" ".join(lines).split())
+            if len(text) > 200:
+                text = text[:200] + " …"
+            label = f"**{h['path']}**" + (f" ({where})" if where else "")
+            items.append(f"- {label}{': ' + text if text else ''} [chunk:{h['chunk_id']}]")
+        body = (
+            "These passages in your files match the question best:\n\n" + "\n".join(items)
+            if items
+            else "Nothing in your indexed files matches this question."
+        )
+        return {
+            "answer": f"{intro}\n\n{body}",
+            "citations": [_local_citation(h["chunk_id"], h) for h in hits],
+            "usage": _empty_usage(),
+            "model": "demo",
+            "web_enabled": False,
+            "step_cap_reached": False,
+            "refused": False,
+        }

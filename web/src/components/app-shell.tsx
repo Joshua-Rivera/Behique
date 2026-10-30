@@ -9,6 +9,7 @@ import { useIsNarrow } from "@/lib/media";
 import { usePaneSize } from "@/lib/resizable";
 import { applyTheme, getTheme } from "@/lib/theme";
 
+import { CommandPalette } from "./command-palette";
 import { ZigzagBand } from "./motifs";
 import { COMPACT_BELOW, Sidebar } from "./sidebar";
 import { Divider } from "./ui/divider";
@@ -79,6 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

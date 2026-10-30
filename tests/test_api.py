@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from behique.config import Settings
-from behique.main import create_app
+from behique.main import _script_hashes, create_app
 from behique.service import Service
 from behique.store import Store
 from tests.conftest import DIM
@@ -128,6 +128,13 @@ def test_static_ui_and_csp(tmp_path):
         assert "settings" in c.get("/settings/").text
         assert c.get("/api/health").json()["ok"] is True  # /api still wins over the UI
         assert "content-security-policy" in c.get("/api/health").headers
+
+
+def test_script_hashes_match_loose_end_tags(tmp_path):
+    (tmp_path / "index.html").write_text(
+        "<script>a=1</script><script>b=2</script\t\n x><script src=/x.js></script>"
+    )
+    assert len(_script_hashes(tmp_path)) == 2
 
 
 def test_dev_cors(tmp_path):

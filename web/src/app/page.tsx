@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/app-shell";
 import { OPEN_SEARCH_EVENT } from "@/components/command-palette";
 import { Preview, PreviewSkeleton, type PreviewTarget } from "@/components/preview/preview";
 import { FilterPopover, NO_FILTERS, type Filters } from "@/components/search/filters";
-import { Results } from "@/components/search/results";
+import { groupByFile, Results } from "@/components/search/results";
 import { Divider } from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
@@ -95,7 +95,8 @@ export default function SearchPage() {
     ext: filters.ext,
     path_prefix: filters.path_prefix,
   });
-  const hits = useMemo(() => search.data ?? [], [search.data]);
+  // Visual order: grouped by file, so ↑/↓ moves through the list as it is shown.
+  const hits = useMemo(() => groupByFile(search.data ?? []).flatMap((g) => g.hits), [search.data]);
   const terms = useMemo(() => queryTerms(debounced), [debounced]);
 
   useEffect(() => {

@@ -39,7 +39,7 @@ export function Results({
 }) {
   const groups = useMemo(() => groupByFile(hits), [hits]);
   const top = hits[0]?.score || 1;
-  const refs = useRef(new Map<number, HTMLLIElement>());
+  const refs = useRef(new Map<number, HTMLDivElement>());
 
   useEffect(() => {
     if (selected !== null) refs.current.get(selected)?.scrollIntoView({ block: "nearest" });
@@ -48,16 +48,15 @@ export function Results({
   return (
     <div role="listbox" aria-label="Search results" className="pb-6">
       {groups.map((g) => (
-        <section key={g.fileId} aria-label={g.path} className="border-b-[0.5px] border-line">
-          <h2 className="flex items-center gap-1.5 px-4 pb-1 pt-3 font-mono text-xs text-stone">
+        <div key={g.fileId} role="group" aria-label={g.path} className="border-b-[0.5px] border-line">
+          <div aria-hidden className="flex items-center gap-1.5 px-4 pb-1 pt-3 font-mono text-xs text-stone">
             <FileText className="size-3.5" aria-hidden />
             <span className="truncate">{g.path}</span>
-          </h2>
-          <ul>
+          </div>
             {g.hits.map((h) => {
               const active = h.chunk_id === selected;
               return (
-                <li
+                <div
                   key={h.chunk_id}
                   ref={(el) => {
                     if (el) refs.current.set(h.chunk_id, el);
@@ -99,11 +98,10 @@ export function Results({
                   <p className="mt-1 line-clamp-3 text-sm leading-snug text-ink">
                     {highlight(snippet(h.text), terms)}
                   </p>
-                </li>
+                </div>
               );
             })}
-          </ul>
-        </section>
+        </div>
       ))}
     </div>
   );

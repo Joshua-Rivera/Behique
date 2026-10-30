@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "e2e": "playwright test",
     "gen:api": "cd .. && PYTHONPATH=src uv run python scripts/export_openapi.py web/openapi.json && cd web && openapi-typescript openapi.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
@@ -28,7 +29,9 @@
     "rehype-sanitize": "6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4",
     "@eslint/eslintrc": "3.3.7",
+    "@playwright/test": "1",
     "@tailwindcss/postcss": "4",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",

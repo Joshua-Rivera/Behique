@@ -38,8 +38,8 @@ def test_mcp_tools(tmp_path):
     c, svc, _ = _client(tmp_path)
     c.base_url = "http://localhost:8000"
     with c:
-        c.post("/sources", json={"path": "notes"})
-        c.post("/index")
+        c.post("/api/sources", json={"path": "notes"})
+        c.post("/api/index")
         _wait(svc)
         assert _init(c).status_code == 200
         names = {t["name"] for t in _rpc(c, "tools/list").json()["result"]["tools"]}

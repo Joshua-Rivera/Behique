@@ -46,3 +46,5 @@ class Settings:
     allow_web: bool = field(default_factory=lambda: _bool("ALLOW_WEB"))
     web_allowed_domains: list[str] = field(default_factory=lambda: _list("WEB_ALLOWED_DOMAINS"))
     web_blocked_domains: list[str] = field(default_factory=lambda: _list("WEB_BLOCKED_DOMAINS"))
+    web_dir: Path = field(default_factory=lambda: Path(os.environ.get("WEB_DIR", "/app/web")))
+    dev_cors: bool = field(default_factory=lambda: _bool("DEV_CORS"))

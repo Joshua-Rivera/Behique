@@ -11,3 +11,6 @@ tests
 *.db
 .env
 eval/ask_results.json
+web/node_modules
+web/.next
+web/out

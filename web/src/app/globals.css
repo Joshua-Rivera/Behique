@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Earthy, flat palette. Light first; dark follows the system unless overridden. */
+:root {
+  --clay: #993c1d;
+  --ochre: #854f0b;
+  --ochre-soft: #faeeda;
+  --moss: #3b6d11;
+  --sea: #0f6e56;
+  --sand: #f1efe8;
+  --stone: #5f5e5a;
+  --line: #d3d1c7;
+  --surface: #ffffff;
+  --ink: #2c2c2a;
+  --danger: #a32d2d;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --clay: #f0997b;
+    --ochre: #fac775;
+    --ochre-soft: #412402;
+    --moss: #97c459;
+    --sea: #5dcaa5;
+    --sand: #2c2c2a;
+    --stone: #b4b2a9;
+    --line: #5f5e5a;
+    --surface: #1b1b1a;
+    --ink: #f1efe8;
+    --danger: #f09595;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --clay: #f0997b;
+  --ochre: #fac775;
+  --ochre-soft: #412402;
+  --moss: #97c459;
+  --sea: #5dcaa5;
+  --sand: #2c2c2a;
+  --stone: #b4b2a9;
+  --line: #5f5e5a;
+  --surface: #1b1b1a;
+  --ink: #f1efe8;
+  --danger: #f09595;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-clay: var(--clay);
+  --color-ochre: var(--ochre);
+  --color-ochre-soft: var(--ochre-soft);
+  --color-moss: var(--moss);
+  --color-sea: var(--sea);
+  --color-sand: var(--sand);
+  --color-stone: var(--stone);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-danger: var(--danger);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  --font-serif: "Iowan Old Style", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Flat everywhere: no shadows, gradients or blur sneak in from primitives. */
+*,
+*::before,
+*::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+
+.hairline {
+  border-color: var(--line);
+  border-width: 0.5px;
+}
+
+mark {
+  background: var(--ochre-soft);
+  color: inherit;
+  border-bottom: 1px solid var(--ochre);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

@@ -15,12 +15,12 @@ Without an Anthropic API key, nothing leaves the container.
 git clone https://github.com/Joshua-Rivera/Behique && cd Behique
 NOTES_DIR=~/Documents/notes docker compose up --build -d   # mounts it at /data/notes (read-only)
 
-curl localhost:8000/health
-curl -X POST localhost:8000/sources -H 'content-type: application/json' \
+curl localhost:8000/api/health
+curl -X POST localhost:8000/api/sources -H 'content-type: application/json' \
      -d '{"name": "notes", "path": "notes"}'
-curl -X POST localhost:8000/index
-curl localhost:8000/index/status
-curl -X POST localhost:8000/search -H 'content-type: application/json' \
+curl -X POST localhost:8000/api/index
+curl localhost:8000/api/index/status
+curl -X POST localhost:8000/api/search -H 'content-type: application/json' \
      -d '{"query": "how long is the train to Porto", "k": 5}'
 ```
 
@@ -42,7 +42,7 @@ Tools: `search_files`, `read_file`, `list_sources`. All are read-only. If you se
 
 ```sh
 ANTHROPIC_API_KEY=sk-ant-... docker compose up -d
-curl -X POST localhost:8000/ask -H 'content-type: application/json' \
+curl -X POST localhost:8000/api/ask -H 'content-type: application/json' \
      -d '{"question": "What did the Portugal trip cost?"}'
 ```
 
@@ -120,7 +120,7 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
   non-localhost `Host` and `Origin` headers, to block DNS rebinding.
 - Secrets and noise are never indexed: `.env*`, keys and certificates, `credentials*`,
   `*secret*`, hidden directories, `node_modules`, `.git`, lockfiles. Symlinks are never followed.
-- Files are read through `/files/{id}`, by id only, never by a path you supply.
+- Files are read through `/api/files/{id}`, by id only, never by a path you supply.
 - **What leaves your machine:** nothing, unless `ANTHROPIC_API_KEY` is set. With it, `/ask`
   sends your question and the snippets Claude retrieves to the Anthropic API. With
   `ALLOW_WEB=true`, Claude can also search the web.
@@ -149,14 +149,14 @@ ANTHROPIC_API_KEY=... ASK_MODEL=claude-haiku-5-5 uv run python eval/ask_eval.py
 
 | Endpoint | |
 |---|---|
-| `GET /health` | `{ok, model, chunks}` |
-| `POST /sources` `{name, path}` | Register a mounted folder |
-| `GET /sources` | Sources with file and chunk counts |
-| `POST /index` `{source_id?}` | Start a background run (409 if one is running) |
-| `GET /index/status` | Progress counters and recent errors |
-| `POST /search` `{query, k, mode, source_id?, ext?, path_prefix?}` | Ranked chunks |
-| `GET /files/{file_id}?chunk_id=&context=` | File text, or a chunk with neighbours |
-| `POST /ask` `{question, allow_web?, source_id?}` | Agentic answer with citations and usage |
+| `GET /api/health` | `{ok, model, chunks}` |
+| `POST /api/sources` `{name, path}` | Register a mounted folder |
+| `GET /api/sources` | Sources with file and chunk counts |
+| `POST /api/index` `{source_id?}` | Start a background run (409 if one is running) |
+| `GET /api/index/status` | Progress counters and recent errors |
+| `POST /api/search` `{query, k, mode, source_id?, ext?, path_prefix?}` | Ranked chunks |
+| `GET /api/files/{file_id}?chunk_id=&context=` | File text, or a chunk with neighbours |
+| `POST /api/ask` `{question, allow_web?, source_id?}` | Agentic answer with citations and usage |
 
 Interactive docs are at `http://localhost:8000/docs`.
 

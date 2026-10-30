@@ -33,7 +33,16 @@ class Service:
     # -- health / sources -------------------------------------------------
 
     def health(self) -> dict:
-        return {"ok": True, "model": self.embedder.name, "chunks": self.store.chunk_count()}
+        from behique import __version__
+
+        return {
+            "ok": True,
+            "version": __version__,
+            "model": self.embedder.name,
+            "chunks": self.store.chunk_count(),
+            "ask_enabled": bool(self.settings.anthropic_api_key),
+            "web_allowed": self.settings.allow_web,
+        }
 
     def add_source(self, name: str, path: str) -> dict:
         root = self.settings.data_root.resolve()

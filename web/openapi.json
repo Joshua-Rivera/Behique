@@ -280,6 +280,43 @@
           }
         }
       }
+    },
+    "/api/ask/stream": {
+      "post": {
+        "summary": "Ask Stream",
+        "description": "Server-Sent Events: step, delta, citations, usage, done, error.",
+        "operationId": "ask_stream_api_ask_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

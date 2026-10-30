@@ -163,11 +163,23 @@ class Service:
     def ask(
         self, question: str, allow_web: bool | None = None, source_id: int | None = None
     ) -> dict:
+        return self._get_asker().ask(question, allow_web, source_id)
+
+    def ask_events(
+        self, question: str, allow_web: bool | None = None, source_id: int | None = None
+    ):
+        return self._get_asker().events(question, allow_web, source_id)
+
+    def _get_asker(self):
         from behique.agent import Asker
 
         if self._asker is None:
             self._asker = Asker(self, self.settings)  # raises AskUnavailable without a key
-        return self._asker.ask(question, allow_web, source_id)
+        return self._asker
+
+    def chunk_path(self, loc: dict) -> str:
+        f = self.store.get_file(loc["file_id"])
+        return f["rel_path"] if f else f"chunk {loc['chunk_id']}"
 
     def chunk_location(self, chunk_id: int) -> dict:
         c = self.store.get_chunk(chunk_id)
